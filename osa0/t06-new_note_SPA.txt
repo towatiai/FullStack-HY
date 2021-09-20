@@ -1,0 +1,7 @@
+title Adding a new note (SPA)
+
+note left of Client: Client redraws the updated notes
+Client->Server: HTTP POST https://studies.cs.helsinki.fi/exampleapp/new_note_spa
+note right of Server: Server saves the note
+Server-->Client: 201 Created
+note left of Client: Client doesn't do anything, since there is no redirect request.

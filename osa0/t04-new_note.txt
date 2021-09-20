@@ -1,0 +1,17 @@
+title Adding a new note
+
+Client->Server: HTTP POST https://studies.cs.helsinki.fi/exampleapp/new_note
+note right of Server: Server saves the note
+Server-->Client: 302 Found
+note left of Client: Response causes a redirect to the same page (refresh)
+Client->Server: HTTP GET https://studies.cs.helsinki.fi/exampleapp/notes
+Server-->Client: Html page
+note left of Client: Client processes the html and makes requests for required files
+Client->Server: HTTP GET https://studies.cs.helsinki.fi/exampleapp/main.css
+Server-->Client: main.css
+Client->Server: HTTP GET https://studies.cs.helsinki.fi/exampleapp/main.js
+Server-->Client: main.js
+note left of Client: Client runs the javascript and makes requests for a json file
+Client->Server: HTTP GET https://studies.cs.helsinki.fi/exampleapp/data.json
+Server-->Client: data.json
+note left of Client: Client processes the data and renders the page

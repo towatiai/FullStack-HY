@@ -1,0 +1,13 @@
+title Opening the SPA
+
+Client->Server: HTTP GET https://studies.cs.helsinki.fi/exampleapp/spa
+Server-->Client: Html page
+note left of Client: Client processes the html and makes requests for required files
+Client->Server: HTTP GET https://studies.cs.helsinki.fi/exampleapp/main.css
+Server-->Client: main.css
+Client->Server: HTTP GET https://studies.cs.helsinki.fi/exampleapp/spa.js
+Server-->Client: spa.js
+note left of Client: Client runs the javascript and makes requests for a json file
+Client->Server: HTTP GET https://studies.cs.helsinki.fi/exampleapp/data.json
+Server-->Client: data.json
+note left of Client: Client processes the data and renders the page
