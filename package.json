@@ -1,0 +1,8 @@
+{
+    "name": "fullstack-hy",
+    "workspaces": [
+      "osa1/anekdootit",
+      "osa1/kurssitiedot",
+      "osa1/unicafe"
+    ]
+  }
