@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import axios from "axios";
+import * as services from "./services";
+import "./index.css";
 
 // Helper function for binding setValue functions
 const binder = (set) => (e) => set(e.target.value);
@@ -37,27 +38,64 @@ const PersonForm = (props) => {
 
 const Persons = props =>
   props.persons
-  .map(person => <p key={person.name}>{person.name}{person.number}</p>)
+  .map(person => <li key={person.id}>
+  <span>{person.name}{person.number}</span>
+  <button onClick={() => props.delete(person)}>Delete</button>
+  </li>)
 
-
+const Notification = ({ message, type }) => (
+  <p className={`${type} notification`}>{message}</p>
+)
 
 const App = () => {
   const [persons, setPersons] = useState([]);
-  const [ filter, setFilter ] = useState('')
+  const [ filter, setFilter ] = useState('');
+  const [notification, setNotification] = useState();
 
-  const addPerson = (newPerson) => {
-    if (persons.some(person => person.name === newPerson.name)) {
-      alert(`${newPerson.name} is already added to phonebook`);
+  const showNotification = notification => {
+    setNotification(notification);
+    setTimeout(() => setNotification(null), 3000);
+  }
+
+  const addPerson = async (newPerson) => {
+    const existingPerson = persons.find(person => person.name === newPerson.name);
+    if (existingPerson) {
+      if (!window.confirm(`${newPerson.name} is already added to phonebook, replace old number with the new one?`)) {
+        return;
+      }
+      
+      try {
+        const updatedPerson = await services.update(existingPerson, newPerson);
+        // Simple replace logic
+        setPersons(persons.map(p => p.id !== updatedPerson.id ? p : updatedPerson));
+        showNotification({ message: `Updated ${updatedPerson.name}`, type: "success"});
+      } catch {
+        showNotification({message: `Information of ${existingPerson.name} has already been removed from the server.`, type: "error"});
+      }
+      
       return;
     }
 
-    setPersons([...persons, newPerson]);
+    const response = await services.create(newPerson);
+    setPersons([...persons, response]);
+
+    showNotification({ message: `Added ${newPerson.name}`, type: "success"});
+  }
+
+  const deletePerson = async (person) => {
+    if (!window.confirm(`Delete ${person.name}?`)) {
+      return;
+    }
+    
+    await services.deletePerson(person);
+    setPersons(persons.filter(p => p.id !== person.id));
+    showNotification({ message: `Removed ${person.name}`, type: "success"});
   }
   
   useEffect(() => {
     // Because of react's limitations...
     (async () => {
-      setPersons((await axios.get('http://localhost:3001/persons'))?.data ?? []);
+      setPersons(await services.getAll());
     })();
     
   }, [])
@@ -65,11 +103,17 @@ const App = () => {
   return (
     <div>
       <h2>Phonebook</h2>
+        { notification?.message && 
+        <Notification message={notification.message} type={notification.type}/>
+        }
         <Filter filter={filter} setFilter={binder(setFilter)}/>
       <h3>Add new</h3>
       <PersonForm addPerson={addPerson}/>
       <h2>Numbers</h2>
-      <Persons persons={persons.filter(person => person.name.toLowerCase().includes(filter.toLowerCase()))}/>
+      <ul>
+      <Persons persons={persons.filter(person => person.name.toLowerCase().includes(filter.toLowerCase()))}
+        delete={deletePerson}/>
+      </ul>
     </div>
   )
 
