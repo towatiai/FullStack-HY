@@ -3,6 +3,7 @@
     "workspaces": [
       "./osa1/*",
       "./osa2/*",
-      "./osa3"
+      "./osa3",
+      "./osa4/*"
     ]
   }
