@@ -76,10 +76,13 @@ const App = () => {
       return;
     }
 
-    const response = await services.create(newPerson);
-    setPersons([...persons, response]);
-
-    showNotification({ message: `Added ${newPerson.name}`, type: "success"});
+    try {
+      const response = await services.create(newPerson);
+      setPersons([...persons, response]);
+      showNotification({ message: `Added ${newPerson.name}`, type: "success"});
+    } catch(e) {
+      showNotification({message: e.response.data.error, type: "error"});
+    }
   }
 
   const deletePerson = async (person) => {
@@ -98,7 +101,7 @@ const App = () => {
       setPersons(await services.getAll());
     })();
     
-  }, [])
+  }, []);
 
   return (
     <div>
