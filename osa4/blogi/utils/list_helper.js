@@ -10,7 +10,23 @@ const favoriteBlog = (blogs) => {
   return blogs.reduce((curr, blog) => blog.likes > curr.likes ? blog : curr)
 }
 
+const mostBlogs = (blogs) => {
+  // authors = { authorName: no. likes }
+  const authors = blogs.reduce((result, blog) => ({
+    ...result, 
+    [blog.author]: (result[blog.author] ?? 0) + 1
+  }), {})
+
+  return Object.entries(authors).reduce((curr, [author, blogs]) => 
+    blogs > curr.blogs ? { author, blogs } : curr,
+    /* Initial value */ { blogs: 0 })
+}
+
 const mostLikes = (blogs) => {
+  if (blogs.length === 0) {
+    return null;
+  }
+
   // authors = { authorName: no. likes }
   const authors = blogs.reduce((result, blog) => ({
     ...result, 
@@ -23,5 +39,5 @@ const mostLikes = (blogs) => {
 }
 
 module.exports = {
-  dummy, totalLikes, favoriteBlog, mostLikes
+  dummy, totalLikes, favoriteBlog, mostBlogs, mostLikes
 }

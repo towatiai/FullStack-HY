@@ -1,12 +1,12 @@
-import axios from 'axios'
-const baseUrl = 'api/persons'
+import axios from 'axios';
+const baseUrl = 'api/persons';
 
 export const getAll = async () => {
   return (await axios.get(baseUrl)).data;
 }
 
 export const create = async newObject => {
-  return (await axios.post(baseUrl, newObject)).data;
+    return (await axios.post(baseUrl, newObject)).data;
 }
 
 export const update = async (existingPerson, newPerson) => {
