@@ -1,0 +1,3 @@
+{
+    "jest.jestCommandLine": "npm test -- tests/blogs.test.js"
+}

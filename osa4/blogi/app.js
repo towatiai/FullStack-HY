@@ -1,16 +1,11 @@
-const mongoose = require('mongoose')
 const express = require('express')
+require('express-async-errors')
 const cors = require('cors')
-const { MONGODB_URI } = require('./utils/config')
-const logger = require('./utils/logger')
 const blogRouter = require('./controllers/blogs');
 const { requestLogger, errorHandler, unknownEndpoint } = require('./utils/middleware')
+const db = require('./db')
 
-mongoose.connect(MONGODB_URI).then(() => {
-  logger.info('Connected to MongoDB.')
-}).catch(e => {
-  logger.error('Error connecting to MongoDB.', e.message)
-});
+db.connect();
 
 const app = express()
 
