@@ -14,11 +14,12 @@ const unknownEndpoint = (request, response) => {
 }
 
 const errorHandler = (error, request, response, next) => {
-    !TEST_ENV && logger.error(error.message)
+    logger.error(error.name, error.message)
 
     switch (error.name) {
         case 'CastError': return response.status(400).send({ error: 'malformatted id' })
         case 'ValidationError': return response.status(400).json({ error: error.message })
+        default: return response.status(400).json({ error: error.message })
     }
 
     next(error)
