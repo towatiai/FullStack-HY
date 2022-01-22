@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "test": "cross-env NODE_ENV=test jest --verbose --runInBand",
-    "start": "cross-env NODE_ENV=production node index.js",
+    "start": "cross-env NODE_ENV=production node --trace-warnings index.js",
     "dev": "cross-env NODE_ENV=development nodemon index.js"
   },
   "author": "",
@@ -15,8 +15,10 @@
     "dotenv": "^8.2.0",
     "express": "^4.17.2",
     "express-async-errors": "^3.1.1",
+    "jsonwebtoken": "^8.5.1",
     "mongodb-memory-server": "^8.1.0",
     "mongoose": "^6.1.5",
+    "mongoose-unique-validator": "^3.0.0",
     "nodemon": "^2.0.15"
   },
   "devDependencies": {

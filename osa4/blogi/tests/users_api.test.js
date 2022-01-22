@@ -3,26 +3,29 @@ const supertest = require('supertest')
 const app = require('../app')
 const db = require('../db')
 const User = require('../models/user')
+const Blog = require('../models/blog')
 const logger = require('../utils/logger')
 
 describe('Users API', () => {
 
-    let api, initialUser
+    let api
+    const initialUser = {
+        username: 'toni',
+        password: 'salasana123'
+    }
 
     beforeAll(async () => {
-        // Because describe cannot be asynchronous, we need to initialize 
-        // the user in beforeAll
-        initialUser = {
-            username: 'toni',
-            passwordHash: await bcrypt.hash('salasana123', 10)
-        }
-
         api = supertest(app)
     })
 
     beforeEach(async () => {
+        await Blog.deleteMany({})
         await User.deleteMany({})
-        await new User(initialUser).save()
+        const { _id } = await new User({
+            username: initialUser.username,
+            passwordHash: await bcrypt.hash(initialUser.password, 10)
+        }).save()
+        initialUser.id = _id;
     })
 
     afterAll(async () => {
@@ -158,5 +161,32 @@ describe('Users API', () => {
         expect(users.length).toEqual(1)
     })
 
-    
+    test('returns blogs that the user has created', async () => {
+        const blog = {
+            title: "React patterns",
+            author: "Michael Chan",
+            url: "https://reactpatterns.com/",
+            likes: 7,
+        }
+
+        const { body: { token }} = await api
+            .post('/api/login')
+            .send(initialUser)
+            .expect(200)
+
+        const { body: createdBlog } = await api
+            .post('/api/blogs')
+            .send(blog)
+            .set({ Authorization: 'bearer ' + token })
+            .expect(201)
+
+        expect(createdBlog).toEqual(expect.objectContaining(blog))
+
+        const { body: user } = await api
+            .get('/api/users/' + initialUser.id)
+            .expect(200)
+
+        expect(user.blogs.length).toEqual(1)
+        expect(user.blogs[0]).toEqual(expect.objectContaining(blog))
+    })
 })

@@ -2,20 +2,55 @@ const supertest = require('supertest')
 const db = require('../db')
 const app = require('../app')
 const Blog = require('../models/Blog')
-const { info } = require('../utils/logger')
+const User = require('../models/User')
+const logger = require('../utils/logger')
+const bcrypt = require('bcrypt')
 
 describe('Blogs API', () => {
 
     let api
 
-    beforeAll(() => {
+    // User who creates all the initial blogs
+    const initialUser = {
+        username: 'toni',
+        password: 'salasana123'
+    }
+
+    const altUser = {
+        username: 'nottoni',
+        password: 'salasana234'
+    }
+
+    async function login(user) {
+        const { body: { token } } = await api
+            .post('/api/login')
+            .send(user)
+            .expect(200)
+    
+        expect(token).toEqual(expect.any(String))
+        return token
+    }
+
+    beforeAll(async () => {
+        await User.deleteMany({})
+
+        const users = [initialUser, altUser];
+        const usersToDb = users.map(async user => ({
+            username: user.username,
+            passwordHash: await bcrypt.hash(user.password, 10)
+        }))
+
+        const addedUsers = await User.insertMany(await Promise.all(usersToDb))
+
+        users.forEach((user, i) => user.id = addedUsers[i]._id.toString())
         api = supertest(app)
     })
 
     beforeEach(async () => {
         await Blog.deleteMany({})
+
+        initialBlogs.forEach(blog => blog.user = initialUser.id)
         await Blog.insertMany(initialBlogs)
-        info("Test database initialized.")
     })
 
     afterAll(async () => {
@@ -33,13 +68,14 @@ describe('Blogs API', () => {
     })
 
     // 4.9
-    test('returns blogs with id', async () => {
+    test('returns blogs with id and user', async () => {
         const response = await api
             .get('/api/blogs')
             .expect(200)
             .expect('Content-Type', /application\/json/)
 
         expect(response.body[0].id).toBeDefined()
+        expect(response.body[0].user).toEqual(expect.objectContaining({ id: initialUser.id, username: initialUser.username }))
     })
 
     // 4.10
@@ -51,9 +87,12 @@ describe('Blogs API', () => {
             likes: 69 // nice
         }
 
+        const token = await login(initialUser)
+
         const { body } = await api
             .post('/api/blogs')
             .send(newBlog)
+            .set({ Authorization: 'bearer ' + token })
             .expect(201)
 
         expect(body.id).toBeDefined()
@@ -71,6 +110,21 @@ describe('Blogs API', () => {
         expect(response.body).toContainEqual(expect.objectContaining(newBlog))
     })
 
+    test('returns error when creating blog without authorization headers', async () => {
+        logger.silence(true)
+
+        await api
+            .post('/api/blogs')
+            .send({ ...initialBlogs[0] })
+            .expect(401)
+
+        const { body: blogs } = await api
+            .get('/api/blogs')
+            .expect(200)
+
+        expect(blogs.length).toBe(initialBlogs.length)
+    })
+
     // 4.11
     test('initializes likes as zero if it is not given', async () => {
         const newBlog = {
@@ -80,9 +134,12 @@ describe('Blogs API', () => {
             // Missing likes, not nice
         }
 
+        const token = await login(initialUser)
+
         const { body: { id } } = await api
             .post('/api/blogs')
             .send(newBlog)
+            .set({ Authorization: 'bearer ' + token })
             .expect(201)
 
         // This fails if post doesn't return id
@@ -105,20 +162,23 @@ describe('Blogs API', () => {
             // Missing likes, not nice
         }
 
+        const token = await login(initialUser)
+
         await api
             .post('/api/blogs')
             .send(newBlog)
+            .set({ Authorization: 'bearer ' + token })
             .expect(400)
     })
 
     // 4.13
     test('deletes blog', async () => {
-        const response = await api.get('/api/blogs')
-
-        const blogToDelete = response.body[0]
+        const { body: [blogToDelete, ..._] } = await api.get('/api/blogs')
+        const token = await login(initialUser)
 
         const deleteResponse = await api
             .delete('/api/blogs/' + blogToDelete.id)
+            .set({ Authorization: 'bearer ' + token })
             .expect(200)
 
         expect(deleteResponse.body).toEqual(blogToDelete)
@@ -126,6 +186,35 @@ describe('Blogs API', () => {
         await api
             .get('/api/blogs/' + blogToDelete.id)
             .expect(404)
+    })
+
+
+    test('returns an error when deleting blog without authorization', async () => {
+        const { body: [blogToDelete, ..._] } = await api.get('/api/blogs')
+
+        // Call fails
+        await api
+            .delete('/api/blogs/' + blogToDelete.id)
+            .expect(401)
+
+        await api
+            .get('/api/blogs/' + blogToDelete.id)
+            .expect(200)
+    })
+
+    test('returns an error when deleting blog with incorrect authorization (other user)', async () => {
+        const { body: [blogToDelete, ..._] } = await api.get('/api/blogs')
+        const token = await login(altUser)
+
+        // Call fails
+        await api
+            .delete('/api/blogs/' + blogToDelete.id)
+            .set({ Authorization: token })
+            .expect(401)
+
+        await api
+            .get('/api/blogs/' + blogToDelete.id)
+            .expect(200)
     })
 
     // 4.14
