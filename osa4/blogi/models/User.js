@@ -1,5 +1,8 @@
 const mongoose = require('mongoose')
-const uniqueValidator = require('mongoose-unique-validator')
+
+// UniqueValidator seems to have issues when updating users.
+// See: https://github.com/blakehaswell/mongoose-unique-validator/issues/88
+//const uniqueValidator = require('mongoose-unique-validator')
 
 const userSchema = mongoose.Schema({
   username: { type: String, required: true, minLength: 3, unique: true },
